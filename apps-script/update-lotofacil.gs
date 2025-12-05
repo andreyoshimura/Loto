@@ -1,17 +1,10 @@
 const SHEET_RESULTADOS = 'Resultados';
-
-// URL base da API oficial CAIXA (espelho estável)
 const BASE_URL = 'https://servicebus2.caixa.gov.br/portaldeloterias/api/lotofacil/';
 
-/**
- * Função principal.
- * Completa automaticamente TODOS os concursos faltantes.
- */
 function updateLotofacil() {
   const ss = SpreadsheetApp.getActive();
   let sheet = ss.getSheetByName(SHEET_RESULTADOS);
 
-  // Cria a aba Resultados se não existir
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_RESULTADOS);
     sheet.getRange(1, 1, 1, 17).setValues([[
@@ -24,11 +17,14 @@ function updateLotofacil() {
 
   const lastRow = sheet.getLastRow();
   const lastConcurso = lastRow > 1 ? Number(sheet.getRange(lastRow, 1).getValue()) : 0;
-
   Logger.log("Último concurso registrado: " + lastConcurso);
 
-  // Obtém o concurso mais recente da Caixa
   const ultimo = getUltimoConcurso();
+  if (!ultimo) {
+    Logger.log("Não foi possível obter o último concurso da Caixa.");
+    return;
+  }
+
   Logger.log("Último concurso disponível na Caixa: " + ultimo);
 
   if (ultimo <= lastConcurso) {
@@ -42,31 +38,41 @@ function updateLotofacil() {
     const info = getConcurso(n);
 
     if (!info) {
-      Logger.log("Concurso " + n + " não encontrado.");
+      Logger.log("Concurso " + n + " não pôde ser carregado (erro na API). Pulando.");
+      continue;
+    }
+
+    if (!info.listaDezenas || !info.numero) {
+      Logger.log("Concurso " + n + " com estrutura inesperada. Pulando.");
       continue;
     }
 
     const dezenas = info.listaDezenas.map(Number).sort((a, b) => a - b);
 
+    if (dezenas.length !== 15) {
+      Logger.log("Concurso " + n + " ignorado: não possui 15 dezenas.");
+      continue;
+    }
+
     const row = [
-      info.numero, 
+      Number(info.numero),
       info.dataApuracao || "",
       ...dezenas
     ];
 
     rows.push(row);
     Logger.log("Concurso " + n + " carregado.");
+    Utilities.sleep(200);
   }
 
   if (rows.length > 0) {
     sheet.getRange(lastRow + 1, 1, rows.length, 17).setValues(rows);
-    Logger.log("Inseridos " + rows.length + " novos concursos.");
+    Logger.log("Inseridos " + rows.length + " concursos novos.");
+  } else {
+    Logger.log("Nenhuma linha a inserir.");
   }
 }
 
-/**
- * Obtém JSON da Caixa (com headers obrigatórios)
- */
 function fetchJSON(url) {
   const params = {
     method: "get",
@@ -74,23 +80,38 @@ function fetchJSON(url) {
     headers: { "Accept": "application/json" }
   };
 
-  const resp = UrlFetchApp.fetch(url, params);
-  if (resp.getResponseCode() !== 200) return null;
+  try {
+    const resp = UrlFetchApp.fetch(url, params);
 
-  return JSON.parse(resp.getContentText());
+    const code = resp.getResponseCode();
+    if (code !== 200) {
+      Logger.log("HTTP " + code + " em " + url);
+      return null;
+    }
+
+    const text = resp.getContentText();
+    if (!text) {
+      Logger.log("Resposta vazia em " + url);
+      return null;
+    }
+
+    return JSON.parse(text);
+  } catch (e) {
+    Logger.log("Erro ao acessar " + url + ": " + e);
+    return null;
+  }
 }
 
-/**
- * Obtém o último concurso disponível
- */
 function getUltimoConcurso() {
   const data = fetchJSON(BASE_URL);
+  if (!data || !data.numero) {
+    Logger.log("getUltimoConcurso: resposta inválida.");
+    return null;
+  }
   return Number(data.numero);
 }
 
-/**
- * Obtém concurso específico
- */
 function getConcurso(n) {
-  return fetchJSON(BASE_URL + n);
+  const url = BASE_URL + n;
+  return fetchJSON(url);
 }

@@ -57,6 +57,8 @@ function updateLotofacil() {
     return;
   }
 
-  sheet.getRange(lastRow + 1, 1, rowsToAppend.length, 17).setValues(rowsToAppend);
+  sheet.getRange(lastRow + 1, 1, rowsToAppend.length, 17)
+       .setValues(rowsToAppend);
+
   Logger.log('Inseridos ' + rowsToAppend.length + ' concursos novos.');
 }

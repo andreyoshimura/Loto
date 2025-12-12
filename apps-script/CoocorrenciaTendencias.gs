@@ -1,4 +1,5 @@
 /**
+ * Script 2 - Coocorrencia e tendencia
  * Gera automaticamente:
  * 1. Aba COOCORRENCIA (25×25)
  * 2. Aba TENDENCIAS (20, 50, 100 + atraso + ranking)

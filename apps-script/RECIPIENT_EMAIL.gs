@@ -1,6 +1,6 @@
 /**
  * Lotofácil: confere jogos da aba "SUGESTOES_DIA" (1 linha = 1 jogo, colunas n1..n15)
- * e envia por e-mail via Gmail (zero custo).
+ * e envia por e-mail via Gmail (zero custo), necessario criar um job para rodar diariamente.
  *
  * Layout esperado (cabeçalho):
  * DataExecucao | JogoID | Origem | n1 | n2 | ... | n15

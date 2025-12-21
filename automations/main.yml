@@ -1,0 +1,32 @@
+name: Atualizar Imagem Diaria
+on:
+  schedule:
+    - cron: '0 12 * * *' # Roda todos os dias às 12:00 UTC (9h Brasil)
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Instalar Dependencias
+        run: pip install pillow
+
+      - name: Gerar Imagem
+        run: python main.py
+
+      - name: Push da nova imagem
+        run: |
+          git config --global user.name "Bot Loto"
+          git config --global user.email "bot@loto.com"
+          git add lotofacil.jpg
+          git commit -m "Update dicas $(date +'%d-%m-%Y')"
+          git push
+          

@@ -2,7 +2,7 @@ name: Automacao Sorte Facil
 on:
   workflow_dispatch: # Isso faz o botão aparecer para teste manual
   schedule:
-    - cron: '0 12 * * *'
+    - cron: '10 0 * * *'
 
 jobs:
   build:

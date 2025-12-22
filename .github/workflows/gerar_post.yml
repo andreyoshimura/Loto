@@ -25,7 +25,7 @@ jobs:
       - name: Salvar no Git
         run: |
           git config --global user.name "Sorte Facil Bot"
-          git config --global user.email "bot@sortefacil.com"
+          git config --global user.email "sortefacil.br@gmail.com"
           git add lotofacil.jpg
           git commit -m "Update imagem" || echo "Sem mudanças"
           git push

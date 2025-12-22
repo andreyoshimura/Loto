@@ -8,7 +8,7 @@ def gerar_imagem():
     
     # 2. Abrir o fundo fixo (deve estar na mesma pasta)
     try:
-        img = Image.open("fundo.jpg").convert("RGB")
+        img = Image.open("fundo.png").convert("RGB")
     except:
         # Cria um fundo verde caso o ficheiro não exista para teste
         img = Image.new('RGB', (1080, 1080), color = (0, 102, 51))

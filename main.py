@@ -19,7 +19,7 @@ def gerar_imagem():
     
     # 3. Textos (Mantendo apenas o que você pediu)
     texto_topo = f" Dicas do dia {hoje} "
-    texto_sub = " Lotofácil ︾ "
+    texto_sub = " ︾ Lotofácil ︾ "
     
     # 4. Configurar Fontes
     try:
@@ -29,8 +29,8 @@ def gerar_imagem():
 
     # 5. Escrever na Imagem
     # Posicionado no centro do espaço verde
-    draw.text((540, 700), texto_topo, fill="white", font=font_titulo, anchor="ms")
-    draw.text((540, 820), texto_sub, fill="yellow", font=font_titulo, anchor="ms")
+    draw.text((540, 700), texto_topo, fill="yellow", font=font_titulo, anchor="ms")
+    draw.text((540, 820), texto_sub, fill="white", font=font_titulo, anchor="ms")
 
     # 6. Guardar o resultado final
     img.save("lotofacil.jpg", "JPEG", quality=95)

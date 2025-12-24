@@ -20,7 +20,7 @@ TAREFA:
 
 FORMATO FINAL (OBRIGATÓRIO):
 
-Tendência Lotofácil – Hoje
+Tendência Lotofácil – {{formatDate(now; "DD/MM/YYYY")}}
 
 Jogo 01: xx-xx-xx-xx-xx-xx-xx-xx-xx-xx-xx-xx-xx-xx-xx-xx-xx
 Jogo 02: xx-xx-xx-xx-xx-xx-xx-xx-xx-xx-xx-xx-xx-xx-xx-xx-xx

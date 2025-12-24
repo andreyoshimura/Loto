@@ -1,6 +1,6 @@
 /**
- * Lotofácil: confere jogos da aba "SUGESTOES_DIA" (1 linha = 1 jogo, colunas n1..n15)
- * e envia por e-mail via Gmail (zero custo), necessario criar um job para rodar diariamente.
+ * Lotofacil: confere jogos da aba "SUGESTOES_DIA" (1 linha = 1 jogo, colunas n1..n15)
+ * e envia ACERTOS por e-mail via Gmail (zero custo).
  *
  * Layout esperado (cabeçalho):
  * DataExecucao | JogoID | Origem | n1 | n2 | ... | n15
@@ -8,8 +8,14 @@
 
 const CONFIG = {
   SHEET_NAME: "SUGESTOES_DIA",
-  RECIPIENT_EMAIL: "andre@dragon.net.br", // troque se quiser
-  API_URL: "https://loteriascaixa-api.herokuapp.com/api/lotofacil/latest",
+   RECIPIENT_EMAILS: [
+    "andre@dragon.net.br",
+    "sortefacil.br@gmail.com",
+  ],
+
+  // ✅ API atualizada (Caixa)
+  API_URL: "https://servicebus2.caixa.gov.br/portaldeloterias/api/lotofacil",
+
   DATE_COL: "DataExecucao",
   N_PREFIX: "n",
   N_COUNT: 15,
@@ -96,7 +102,7 @@ function lotofacilEnviarAcertosPorEmail() {
   });
 
   const subject = `Lotofácil - Acertos (${result.concurso} - ${result.data})`;
-  MailApp.sendEmail(CONFIG.RECIPIENT_EMAIL, subject, report.join("\n"));
+  MailApp.sendEmail(CONFIG.RECIPIENT_EMAILS.join(","), subject, report.join("\n"));
 }
 
 /** Retorna o timestamp (ms) mais recente encontrado numa coluna de datas. */
@@ -150,27 +156,40 @@ function pad2(n) {
 }
 
 function formatDateTime(d) {
-  // formata no timezone da planilha/script
   return Utilities.formatDate(d, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss");
 }
 
-/** Busca resultado mais recente da Lotofácil. */
+/** ✅ Busca resultado mais recente da Lotofácil (API Caixa/servicebus2). */
 function fetchLatestLotofacil() {
-  const resp = UrlFetchApp.fetch(CONFIG.API_URL, { muteHttpExceptions: true });
+  const resp = UrlFetchApp.fetch(CONFIG.API_URL, {
+    muteHttpExceptions: true,
+    headers: {
+      "Accept": "application/json",
+      // Ajuda a evitar bloqueios ocasionais por filtro simples
+      "User-Agent": "GoogleAppsScript/lotofacil-checker",
+      "Cache-Control": "no-cache",
+      "Pragma": "no-cache",
+    },
+  });
+
   const code = resp.getResponseCode();
+  const body = resp.getContentText();
   if (code < 200 || code >= 300) {
-    throw new Error(`Falha ao buscar API (${code}): ${resp.getContentText()}`);
+    throw new Error(`Falha ao buscar API (${code}): ${body}`);
   }
 
-  const data = JSON.parse(resp.getContentText());
+  const data = JSON.parse(body);
 
-  // campos comuns nessa API (podem variar)
-  const concurso = data.concurso || data.numero || data.loteria?.concurso || "desconhecido";
-  const dataSorteio = data.data || data.dataApuracao || data.loteria?.data || "desconhecida";
+  // Formato típico:
+  // numero: 3562
+  // dataApuracao: "13/12/2025"
+  // listaDezenas: ["01","02",...]
+  const concurso = String(data.numero ?? data.concurso ?? "desconhecido");
+  const dataSorteio = String(data.dataApuracao ?? data.data ?? "desconhecida");
 
-  const dezenasRaw = data.dezenas || data.listaDezenas || data.resultado || data.dezenasSorteadas;
+  const dezenasRaw = data.listaDezenas ?? data.dezenas ?? data.resultado;
   if (!Array.isArray(dezenasRaw) || dezenasRaw.length < 15) {
-    throw new Error("API retornou formato inesperado de dezenas (esperava array com 15 dezenas).");
+    throw new Error(`API retornou formato inesperado de dezenas: ${JSON.stringify(dezenasRaw)}`);
   }
 
   const dezenas = dezenasRaw

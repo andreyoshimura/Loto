@@ -80,6 +80,16 @@ Script dedicado ao cálculo completo de **coocorrência** e **tendência** entre
 
 ---
 
+## 🟨 RECIPIENT_EMAIL.gs
+
+Script responsável por conferir os jogos da aba "SUGESTOES_DIA"com os concursos oficiais da Lotofácil e enviar email através do acionador.
+
+### Funções incluídas
+- **lotofacilEnviarAcertosPorEmail**  
+  Envio do email
+
+---
+
 ## 🟨 generate-analyses.gs
 
 (Em desenvolvimento / versão modular antiga)

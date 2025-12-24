@@ -13,9 +13,9 @@ Cada objeto tem:
 
 TAREFA:
 1. Use esses dados para atribuir um score simples para cada dezena combinando atraso e frequências.
-2. Gere EXATAMENTE 5 jogos, cada um com 17 dezenas distintas entre 01 e 25.
+2. Gere EXATAMENTE 5 jogos, cada um com EXATAMENTE 17 dezenas distintas entre 01 e 25. Nunca gere jogos com menos ou mais dezenas.
 3. Mantenha diversidade entre os jogos, evitando jogos idênticos e evitando repetir demais a mesma combinação.
-4. Evite sequências muito longas (no máximo 3 dezenas consecutivas).
+4. É proibido existir qualquer sequência de 4 ou mais dezenas consecutivas.
 5. Ordene as dezenas de cada jogo em ordem crescente.
 
 FORMATO FINAL (OBRIGATÓRIO):

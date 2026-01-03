@@ -2,6 +2,7 @@
 Script para gerar automaticamente uma imagem JPG a partir de um arquivo de fundo (PNG ou JPG),
 inserindo textos centralizados com a data atual e um título fixo relacionado à Lotofácil.
 O resultado final é salvo como 'lotofacil.jpg' para uso em publicações ou automações diárias.
+Dependecias de arquivos .github/workflows/
 Imagem de entrada : fundo.png
 Imagem de saida : lotofacil.jpg
 Local: Diretorio Raiz

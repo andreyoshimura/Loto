@@ -13,7 +13,7 @@ A planilha **não é apenas dados**: ela materializa toda a lógica estatística
 ## Visão Geral do Fluxo
 
 1. **Resultados**  
-   Entrada dos concursos oficiais da Lotofácil.
+   Entrada dos concursos oficiais da Lotofácil -> script update-lotofacil.gs 
 2. **Resumo / Tendências / Coocorrência**  
    Estatísticas derivadas do histórico.
 3. **Simulações / Scores / Configurações**  

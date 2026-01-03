@@ -13,9 +13,9 @@ A planilha **não é apenas dados**: ela materializa toda a lógica estatística
 ## Visão Geral do Fluxo
 
 1. **Resultados**  
-   Entrada dos concursos oficiais da Lotofácil -> apps-script/update-lotofacil.gs
+   Entrada dos concursos oficiais da Lotofácil -> apps-script/update-lotofacil.gs e apps-script/MonteCarloBayes.gs
 2. **Resumo / Tendências / Coocorrência**  
-   Estatísticas derivadas do histórico -> apps-script/CoocorrenciaTendencias.gs e apps-script/BuldResumo.gs
+   Estatísticas derivadas do histórico -> apps-script/CoocorrenciaTendencias.gs e apps-script/BuldResumo.gs e apps-script/MonteCarloBayes.gs
 3. **Simulações / Scores / Configurações**  
    Apoio à IA e Monte Carlo.
 4. **Jogos Gerados / Backtest**  
@@ -125,7 +125,7 @@ Lista de concursos onde algum jogo atingiu **14 ou mais acertos**.
 ### Abas de Simulação e IA (Evolução do Projeto)
 
 #### Simulador_MC
-Base de simulações Monte Carlo:
+Base de simulações Monte Carlo -> apps-script/MonteCarloBayes.gs:
 - combinações geradas
 - suporte a análises probabilísticas
 

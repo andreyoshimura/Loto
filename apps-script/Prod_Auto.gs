@@ -1,74 +1,46 @@
 /**
  * ============================================================
- * Prod_Auto.gs — MODO PRODUÇÃO AUTOMÁTICO (FECHADO)
+ * Prod_Auto.gs — MODO PRODUÇÃO AUTOMÁTICO (VERSÃO FINAL)
  * ============================================================
  *
- * Pipeline executado em ORDEM SEGURA:
+ * Pipeline AUTOMÁTICO e IDÊMPOTENTE:
  *
- * 1) registrarResultadoECalcularAcertosAuto()
- *    - Lê Entrada_Resultado
- *    - Calcula acertos dos jogos anteriores
- *    - Escreve em Resultados_Jogos
+ * 1) Lê o ÚLTIMO sorteio diretamente da aba "Resultados"
+ * 2) Registra acertos em "Resultados_Jogos"
+ * 3) Executa aprendizado (backtest fiel, janela 50)
+ *    - com trava de regressão (rollback automático)
+ * 4) Gera novos jogos com gerarJogosAgressivo()
  *
- * 2) backtestFielEAutoAjustarConfig_50()
- *    - Aprende com histórico (50 concursos)
- *    - Ajusta pesos do Config
- *    - Registra performance em Config_Historico
- *
- * 3) TRAVA DE PRODUÇÃO
- *    - Se o best_score cair além do permitido, REVERTE Config
- *
- * 4) gerarJogosAgressivo()
- *    - Gera os próximos 5 jogos (17 dezenas)
- *
- * Objetivo:
- * ---------
- * Operar como sistema produtivo contínuo, sem IA, com
- * aprendizado controlado e reversível.
+ * NÃO depende de preenchimento manual.
+ * Compatível com gatilho diário.
  */
 
 
 /* =========================================================
-   FUNÇÃO ÚNICA DE PRODUÇÃO (EXECUTE ESTA)
+   FUNÇÃO PRINCIPAL (USE ESTA)
    ========================================================= */
 
 function executarModoProducao() {
   const ss = SpreadsheetApp.getActive();
 
-  // ===== CONFIG FIXA DO GERADOR =====
-  const GENERATOR_FN_NAME = "gerarJogosAgressivo";
+  const GENERATOR_FN = "gerarJogosAgressivo";
 
-  // ===== TRAVAS DE SEGURANÇA =====
+  // ---- TRAVAS ----
   const GUARD = {
-    HIST_N: 5,        // baseline = média dos últimos 5 backtests
-    MAX_DROP: 0.6    // queda máxima aceitável no best_score
+    HIST_N: 5,       // baseline = média últimos N backtests
+    MAX_DROP: 0.6    // queda máxima permitida
   };
 
   // --------------------------------------------------------
-  // 0) Validação mínima de entrada
+  // 1) Ler último sorteio diretamente de Resultados
   // --------------------------------------------------------
-  const shEntrada = ss.getSheetByName("Entrada_Resultado");
-  if (!shEntrada) throw new Error('Aba "Entrada_Resultado" não encontrada.');
-
-  const concurso = String(shEntrada.getRange("B1").getDisplayValue()).trim();
-  const dezenas = String(shEntrada.getRange("B2").getDisplayValue()).trim();
-
-  if (!concurso || !dezenas) {
-    throw new Error('Entrada_Resultado incompleta: preencha B1 (concurso) e B2 (15 dezenas).');
+  const lastDraw = getLastDrawFromResultados_(ss);
+  if (!lastDraw) {
+    throw new Error('Falha ao ler último sorteio da aba "Resultados".');
   }
 
   // --------------------------------------------------------
-  // 1) Baseline (antes do learning)
-  // --------------------------------------------------------
-  const baseline = getBaselineBestScore_(ss, GUARD.HIST_N);
-
-  // --------------------------------------------------------
-  // 2) Snapshot do Config (para possível rollback)
-  // --------------------------------------------------------
-  const cfgBefore = loadConfigSnapshot_(ss);
-
-  // --------------------------------------------------------
-  // 3) Registrar resultado e calcular acertos
+  // 2) Registrar resultado e calcular acertos
   // --------------------------------------------------------
   if (typeof registrarResultadoECalcularAcertosAuto !== "function") {
     throw new Error("Função registrarResultadoECalcularAcertosAuto() não encontrada.");
@@ -76,7 +48,15 @@ function executarModoProducao() {
   registrarResultadoECalcularAcertosAuto();
 
   // --------------------------------------------------------
-  // 4) Rodar backtest fiel (aprendizado)
+  // 3) Baseline antes do aprendizado
+  // --------------------------------------------------------
+  const baseline = getBaselineBestScore_(ss, GUARD.HIST_N);
+
+  // Snapshot para rollback
+  const cfgBefore = loadConfigSnapshot_(ss);
+
+  // --------------------------------------------------------
+  // 4) Aprendizado (backtest fiel)
   // --------------------------------------------------------
   if (typeof backtestFielEAutoAjustarConfig_50 !== "function") {
     throw new Error("Função backtestFielEAutoAjustarConfig_50() não encontrada.");
@@ -84,25 +64,20 @@ function executarModoProducao() {
   backtestFielEAutoAjustarConfig_50();
 
   // --------------------------------------------------------
-  // 5) Avaliar resultado do learning
+  // 5) Trava de regressão
   // --------------------------------------------------------
   const last = getLastBestScoreRow_(ss);
   if (!last) throw new Error("Não foi possível ler best_score no Config_Historico.");
 
   if (baseline !== null) {
     const drop = baseline - last.bestScore;
-
     if (drop > GUARD.MAX_DROP) {
-      // rollback total
       restoreConfigSnapshot_(ss, cfgBefore);
-
       markLastRowReverted_(ss,
         `REVERTED | DROP=${drop.toFixed(2)} | BASE=${baseline.toFixed(2)}`
       );
-
       throw new Error(
-        `TRAVA ATIVADA: queda excessiva no aprendizado. ` +
-        `baseline=${baseline.toFixed(2)} atual=${last.bestScore.toFixed(2)}`
+        `TRAVA ATIVADA: regressão excessiva. baseline=${baseline.toFixed(2)} atual=${last.bestScore.toFixed(2)}`
       );
     }
   }
@@ -110,17 +85,47 @@ function executarModoProducao() {
   // --------------------------------------------------------
   // 6) Gerar novos jogos (produção)
   // --------------------------------------------------------
-  if (typeof this[GENERATOR_FN_NAME] !== "function") {
-    throw new Error(`Gerador "${GENERATOR_FN_NAME}" não encontrado.`);
+  if (typeof this[GENERATOR_FN] !== "function") {
+    throw new Error(`Gerador "${GENERATOR_FN}" não encontrado.`);
   }
-  this[GENERATOR_FN_NAME]();
+  this[GENERATOR_FN]();
 
   SpreadsheetApp.flush();
 }
 
 
 /* =========================================================
-   BASELINE / BEST SCORE
+   LEITURA DO ÚLTIMO SORTEIO (Resultados)
+   ========================================================= */
+
+/**
+ * Esperado em "Resultados":
+ * - Col A = concurso
+ * - Col C..Q = 15 dezenas
+ */
+function getLastDrawFromResultados_(ss) {
+  const sh = ss.getSheetByName("Resultados");
+  if (!sh) throw new Error('Aba "Resultados" não encontrada.');
+
+  const lr = sh.getLastRow();
+  if (lr < 2) return null;
+
+  const row = sh.getRange(lr, 1, 1, 17).getValues()[0];
+  const concurso = String(row[0] ?? "").trim();
+
+  const dezenas = row.slice(2)
+    .map(Number)
+    .filter(n => n >= 1 && n <= 25);
+
+  const uniq = Array.from(new Set(dezenas)).sort((a, b) => a - b);
+  if (!concurso || uniq.length !== 15) return null;
+
+  return { concurso, dezenas: uniq };
+}
+
+
+/* =========================================================
+   BASELINE / BEST SCORE (Config_Historico)
    ========================================================= */
 
 function getBaselineBestScore_(ss, n) {
@@ -142,7 +147,7 @@ function getBaselineBestScore_(ss, n) {
     .map(r => Number(String(r[0]).replace(",", ".")))
     .filter(v => Number.isFinite(v));
 
-  if (vals.length === 0) return null;
+  if (!vals.length) return null;
   return vals.reduce((a, b) => a + b, 0) / vals.length;
 }
 
@@ -167,21 +172,21 @@ function getLastBestScoreRow_(ss) {
 }
 
 function findBestScoreCol_(header) {
-  const candidates = [
+  const names = [
     "best_score_media_hits",
     "media_hits_rece",
     "media_hits_recente"
   ];
-  for (const name of candidates) {
-    const idx = header.findIndex(h => h === name);
-    if (idx >= 0) return idx + 1;
+  for (const n of names) {
+    const i = header.findIndex(h => h === n);
+    if (i >= 0) return i + 1;
   }
   return -1;
 }
 
 
 /* =========================================================
-   SNAPSHOT / RESTORE CONFIG
+   SNAPSHOT / ROLLBACK CONFIG
    ========================================================= */
 
 function loadConfigSnapshot_(ss) {
@@ -215,7 +220,7 @@ function restoreConfigSnapshot_(ss, snap) {
 
 
 /* =========================================================
-   HISTÓRICO — marcar rollback
+   HISTÓRICO — MARCAR ROLLBACK
    ========================================================= */
 
 function markLastRowReverted_(ss, text) {

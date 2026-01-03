@@ -162,12 +162,12 @@ Aba reservada para métricas futuras de desempenho da IA
 
 ### Aba Operacional
 
-#### Entrada_Resultado
+#### Entrada_Resultado (Desativar)
 Interface simplificada para inserir o último concurso:
 - número do concurso
 - dezenas sorteadas (string)
 
-Normalmente usada por automação/script.
+Não será ais necessário, a aba RESULTADOS já possui os dados neessários..
 
 ---
 

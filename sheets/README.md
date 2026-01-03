@@ -72,7 +72,7 @@ Usada para priorização e filtros de geração de jogos.
 ### Abas de Geração de Jogos
 
 #### SUGESTOES_DIA
-Resultado final da execução:
+Resultado final da execução ->apps-script/SUGESTOES_DIA.gs:
 - Timestamp
 - Origem do método
 - Jogos sugeridos com dezenas
@@ -111,14 +111,14 @@ Calcula os **acertos por jogo**.
 ---
 
 #### Resumo_Jogos
-Estatísticas consolidadas:
+Estatísticas consolidadas -> apps-script/SUGESTOES_DIA.gs:
 - Quantidade de concursos avaliados
 - Ocorrências de 11, 12, 13, 14 e 15 acertos
 
 ---
 
 #### Concursos_14plus
-Lista de concursos onde algum jogo atingiu **14 ou mais acertos**.
+Lista de concursos onde algum jogo atingiu **14 ou mais acertos**. -> apps-script/SUGESTOES_DIA.gs
 
 ---
 

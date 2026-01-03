@@ -1,6 +1,10 @@
 /**
- * Script 1 - Lotofácil: Registra todos os jogos desde 2003 até o ultimo concurso registrado, necessario criar um job para rodar diariamente.
+ * Lista os resultados da lotofacil:
+ * 1) Automação diária em updateLotofacil
+ * 2) Lista todos os concursos existentes
  *
+ * Destino: aba "Resultados"
+ * Fonte "Sistema oficial da caixa"
  */
 const SHEET_RESULTADOS = 'Resultados';
 const BASE_URL = 'https://servicebus2.caixa.gov.br/portaldeloterias/api/lotofacil/';

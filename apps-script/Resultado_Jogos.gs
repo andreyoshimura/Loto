@@ -1,44 +1,64 @@
 /**
  * registrarResultadoECalcularAcertosAuto()
  *
- * O que faz:
- * - Lê concurso e dezenas sorteadas da aba "Entrada_Resultado" (B1 e B2)
- * - Valida que o sorteio tem 15 dezenas distintas (1..25)
- * - Lê "Jogos_Gerados" (cada jogo com 17 dezenas)
- * - Calcula acertos e faz append em "Resultados_Jogos"
- *
- * Por que existe:
- * - Evita erro por executar função sem parâmetros (caso que aconteceu agora).
+ * O que faz (versão sem Entrada_Resultado):
+ * - Lê o ÚLTIMO concurso válido diretamente da aba "Resultados"
+ *   Layout esperado (conforme seu arquivo):
+ *     A=concurso, B=data, C..Q=d1..d15 (15 dezenas)
+ * - Chama registrarResultadoECalcularAcertos(concurso, dezenasSorteadasStr)
+ * - Evita duplicidade (não registra o mesmo concurso duas vezes em Resultados_Jogos)
  */
 function registrarResultadoECalcularAcertosAuto() {
   const ss = SpreadsheetApp.getActive();
 
-  const shIn = ss.getSheetByName("Entrada_Resultado") || ss.insertSheet("Entrada_Resultado");
+  const shRes = ss.getSheetByName("Resultados");
+  if (!shRes) throw new Error('Aba "Resultados" não encontrada.');
 
-  // Garante rótulos mínimos (opcional)
-  if (shIn.getLastRow() < 2) {
-    shIn.getRange("A1").setValue("concurso");
-    shIn.getRange("A2").setValue("dezenas_sorteadas");
+  const lastRow = shRes.getLastRow();
+  if (lastRow < 2) throw new Error('"Resultados" não tem dados suficientes.');
+
+  // Procura de baixo pra cima a última linha válida (concurso + 15 dezenas distintas)
+  let concurso = null;
+  let dezenas = null;
+
+  for (let r = lastRow; r >= 2; r--) {
+    // A..Q => 17 colunas (concurso, data, d1..d15)
+    const row = shRes.getRange(r, 1, 1, 17).getValues()[0];
+
+    const c = row[0]; // col A
+    const ds = row
+      .slice(2, 17) // C..Q
+      .map(v => Number(v))
+      .filter(n => Number.isFinite(n) && n >= 1 && n <= 25);
+
+    if (!c || ds.length !== 15) continue;
+
+    const uniq = Array.from(new Set(ds)).sort((a, b) => a - b);
+    if (uniq.length !== 15) continue;
+
+    concurso = c;
+    dezenas = uniq;
+    break;
   }
 
-  const concurso = shIn.getRange("B1").getValue();
-  const dezenasSorteadasStr = shIn.getRange("B2").getDisplayValue();
-
-  if (!concurso) {
-    throw new Error('Entrada_Resultado!B1 (concurso) está vazio.');
-  }
-  if (!dezenasSorteadasStr) {
-    throw new Error('Entrada_Resultado!B2 (dezenas_sorteadas) está vazio.');
+  if (!concurso || !dezenas) {
+    throw new Error('Não encontrei um concurso válido em "Resultados" (concurso + 15 dezenas em C..Q).');
   }
 
-  // Reusa a função que já calcula tudo
+  const dezenasSorteadasStr = formatDezenas_(dezenas);
+
+  // Reusa a função principal
   registrarResultadoECalcularAcertos(concurso, dezenasSorteadasStr);
 }
 
 /**
  * registrarResultadoECalcularAcertos(concurso, dezenasSorteadasStr)
  *
- * Mantém a versão que valida 15 dezenas no sorteio e 17 dezenas no jogo.
+ * O que faz:
+ * - Valida sorteio: 15 dezenas distintas (1..25)
+ * - Lê "Jogos_Gerados" (cada jogo com 17 dezenas)
+ * - Calcula acertos e faz append em "Resultados_Jogos"
+ * - Evita duplicidade: se o concurso já existe em "Resultados_Jogos", não grava novamente
  */
 function registrarResultadoECalcularAcertos(concurso, dezenasSorteadasStr) {
   const ss = SpreadsheetApp.getActive();
@@ -52,6 +72,13 @@ function registrarResultadoECalcularAcertos(concurso, dezenasSorteadasStr) {
     shRJ.getRange("A1:F1").setValues([[
       "data_resultado", "concurso", "dezenas_sorteadas", "jogo_id", "dezenas_jogo", "acertos"
     ]]);
+  }
+
+  // Evita duplicidade por concurso
+  if (concursoJaRegistrado_(shRJ, concurso)) {
+    return; // comportamento silencioso
+    // ou, se preferir falhar explicitamente:
+    // throw new Error(`Concurso ${concurso} já registrado em "Resultados_Jogos".`);
   }
 
   // Sorteio: 15 dezenas distintas
@@ -99,6 +126,18 @@ function registrarResultadoECalcularAcertos(concurso, dezenasSorteadasStr) {
 
   shRJ.getRange(shRJ.getLastRow() + 1, 1, rows.length, 6).setValues(rows);
   SpreadsheetApp.flush();
+}
+
+/**
+ * Retorna true se já existir qualquer linha em Resultados_Jogos com o mesmo concurso (coluna B).
+ */
+function concursoJaRegistrado_(shRJ, concurso) {
+  const lr = shRJ.getLastRow();
+  if (lr < 2) return false;
+
+  const concursos = shRJ.getRange(2, 2, lr - 1, 1).getValues().flat(); // B2:B
+  const alvo = String(concurso).trim();
+  return concursos.some(c => String(c).trim() === alvo);
 }
 
 /**

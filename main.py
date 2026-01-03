@@ -6,7 +6,6 @@ Imagem de entrada : fundo.png
 Imagem de saida : lotofacil.jpg
 Local: Diretorio Raiz
 """
-
 import datetime
 from PIL import Image, ImageDraw, ImageFont
 

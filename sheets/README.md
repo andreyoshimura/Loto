@@ -1,6 +1,6 @@
 # Sheets – Base Analítica do Projeto Loto
 
-Este diretório contém a planilha principal do projeto **Loto**, que funciona como:
+Este diretório contém a planilha **DB_Loto** principal do projeto que funciona como:
 - banco de dados histórico,
 - motor de estatísticas,
 - área de backtest,

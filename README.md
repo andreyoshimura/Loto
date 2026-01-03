@@ -1,6 +1,6 @@
-# 2-Loteria – Núcleo Lotofácil (5 jogos de 17 dezenas)
+# Loteria – Núcleo Lotofácil (5 jogos de 17 dezenas)
 
-Este repositório concentra a parte de dados e automação do projeto **2-Loteria**, focado na Lotofácil com geração automática de:
+Este repositório concentra a parte de dados e automação do projeto **Loteria**, focado na Lotofácil com geração automática de:
 - **5 jogos**
 - Cada jogo com **17 dezenas** entre 1 e 25
 - Conteúdo otimizado para posts automáticos (Instagram, Facebook, e-mail, etc.)

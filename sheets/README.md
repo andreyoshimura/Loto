@@ -15,7 +15,7 @@ A planilha **não é apenas dados**: ela materializa toda a lógica estatística
 1. **Resultados**  
    Entrada dos concursos oficiais da Lotofácil -> apps-script/update-lotofacil.gs
 2. **Resumo / Tendências / Coocorrência**  
-   Estatísticas derivadas do histórico.
+   Estatísticas derivadas do histórico -> apps-script/CoocorrenciaTendencias.gs
 3. **Simulações / Scores / Configurações**  
    Apoio à IA e Monte Carlo.
 4. **Jogos Gerados / Backtest**  

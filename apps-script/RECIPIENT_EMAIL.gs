@@ -9,8 +9,8 @@
 const CONFIG = {
   SHEET_NAME: "SUGESTOES_DIA",
    RECIPIENT_EMAILS: [
-    "andre@dragon.net.br",
-    "sortefacil.br@gmail.com",
+    "aemail1@gmail.com",
+    "email2@gmail.com",
   ],
 
   // ✅ API atualizada (Caixa)

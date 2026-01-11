@@ -61,12 +61,7 @@ Script responsável por sincronizar a aba **Resultados** com os concursos oficia
 - Faz snapshot da aba Config (pares chave/valor)
 - Chama backtestFielEAutoAjustarConfig_50()
 - Se cair mais que MAX_DROP, faz rollback da Config e marca modo na última linha do histórico.
-- Chama gerarJogosAgressivo() e dá flush()
-
-### Características
-- Usa **funções do Google Sheets em inglês**  
-- Usa **separador de argumentos `;`**, padrão PT-BR  
-- Remove e recria a aba Resumo sempre que executado
+- Chama gerarJogosAgressivo() em **config.gs** e dá flush()
 
 ---
 

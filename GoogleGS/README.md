@@ -1,2 +1,2 @@
-#Modo HML Somente para  homologação
+#Modo PRD
 

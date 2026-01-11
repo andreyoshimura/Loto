@@ -46,7 +46,7 @@ Script responsável por sincronizar a aba **Resultados** com os concursos oficia
 ---
 
 
-## 🟥 2-apps-script/CoocorrenciaTendencias.gs
+## 🟩 2-apps-script/CoocorrenciaTendencias.gs
 
 Script dedicado ao cálculo completo de **coocorrência** e **tendência** entre dezenas.
 
@@ -125,7 +125,7 @@ Gera automaticamente a aba **Resumo**, que contém estatísticas essenciais por 
 ---
 
 
-## 🟨 RECIPIENT_EMAIL.gs
+## 🟥 RECIPIENT_EMAIL.gs
 
 Script responsável por conferir os jogos da aba "SUGESTOES_DIA"com os concursos oficiais da Lotofácil e enviar email através do acionador.
 

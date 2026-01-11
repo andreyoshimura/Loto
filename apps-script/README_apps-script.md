@@ -19,7 +19,7 @@ apps-script/
 
 ---
 
-## 🟦 update-lotofacil.gs
+## 🟦 1-update-lotofacil.gs
 
 Script responsável por sincronizar a aba **Resultados** com os concursos oficiais da Lotofácil.
 
@@ -41,6 +41,26 @@ Script responsável por sincronizar a aba **Resultados** com os concursos oficia
 - Gravação em *batches* para evitar timeout
 - Ordenação automática das dezenas
 - Resiliência contra falhas na API da Caixa
+
+---
+
+
+## 🟥 2-apps-script/CoocorrenciaTendencias.gs
+
+Script dedicado ao cálculo completo de **coocorrência** e **tendência** entre dezenas.
+
+### O que ele faz
+- Cria/atualiza a aba **CoocorrenciaTendencia**  
+- Analisa concursos históricos para determinar:
+  - Quais dezenas aparecem juntas com maior frequência  
+  - Score e ranking de força das dezenas  
+  - Tendências recentes versus comportamento histórico  
+- Produz matriz estruturada pronta para uso em IA ou análises externas
+
+### Características
+- Leitura direta das abas **Resultados** e **Resumo**  
+- Cálculo eficiente mesmo em grandes volumes de concursos  
+- Arquitetado para complementar as estatísticas do `build-resumo.gs`
 
 ---
 
@@ -82,24 +102,6 @@ Gera automaticamente a aba **Resumo**, que contém estatísticas essenciais por 
 
 ---
 
-## 🟥 coocorrenciatendecia.gs
-
-Script dedicado ao cálculo completo de **coocorrência** e **tendência** entre dezenas.
-
-### O que ele faz
-- Cria/atualiza a aba **CoocorrenciaTendencia**  
-- Analisa concursos históricos para determinar:
-  - Quais dezenas aparecem juntas com maior frequência  
-  - Score e ranking de força das dezenas  
-  - Tendências recentes versus comportamento histórico  
-- Produz matriz estruturada pronta para uso em IA ou análises externas
-
-### Características
-- Leitura direta das abas **Resultados** e **Resumo**  
-- Cálculo eficiente mesmo em grandes volumes de concursos  
-- Arquitetado para complementar as estatísticas do `build-resumo.gs`
-
----
 
 ## 🟨 RECIPIENT_EMAIL.gs
 

@@ -44,6 +44,29 @@ Script responsável por sincronizar a aba **Resultados** com os concursos oficia
 
 ---
 
+## 🟩 Prod_Auto.gs
+
+ **executarModoProducao()**
+
+-Lê o último concurso e dezenas na aba Resultados (A=concurso, C..Q=15 dezenas)
+-Lê baseline em Config_Historico (média de N linhas da coluna best_score_media_hits ou alternativas)
+-Faz snapshot da aba Config (pares chave/valor)
+-Chama backtestFielEAutoAjustarConfig_50()
+-Se cair mais que MAX_DROP, faz rollback da Config e marca modo na última linha do histórico
+-Chama gerarJogosAgressivo() e dá flush()
+- Frequência total  
+- Percentual de ocorrência  
+- Último concurso em que saiu  
+- Atraso atual  
+- Frequências nos últimos 20, 50 e 100 concursos  
+
+### Características
+- Usa **funções do Google Sheets em inglês**  
+- Usa **separador de argumentos `;`**, padrão PT-BR  
+- Remove e recria a aba Resumo sempre que executado
+
+---
+
 ## 🟩 build-resumo.gs
 
 Gera automaticamente a aba **Resumo**, que contém estatísticas essenciais por dezena:

@@ -86,6 +86,27 @@ Script dedicado ao cálculo completo de **coocorrência** e **tendência** entre
 
 ---
 
+
+## 🟩 Resultado_Jogos.gs
+
+Possui gatilho diário
+
+- Chama **registrarResultadoECalcularAcertosAuto()**
+- Lê a aba **Resultdos**
+- Monta dezenasSorteadasStr no formato "01-02-...-25"  
+- Chama **registrarResultadoECalcularAcertos(concurso, dezenasSorteadasStr)**  
+- Abre a aba Jogos_Gerados
+- Valida o sorteio: exige exatamente 15 dezenas
+- Lê todos os jogos em Jogos_Gerados (linhas 2.., colunas A..C) e para cada linha:
+- Faz append em Resultados_Jogos (uma linha por jogo)
+
+### Características
+- Usa **funções do Google Sheets em inglês**  
+- Usa **separador de argumentos `;`**, padrão PT-BR  
+- Remove e recria a aba Resumo sempre que executado
+
+---
+
 ## 🟩 build-resumo.gs
 
 Gera automaticamente a aba **Resumo**, que contém estatísticas essenciais por dezena:

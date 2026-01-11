@@ -54,10 +54,13 @@ Script responsável por sincronizar a aba **Resultados** com os concursos oficia
 -Chama backtestFielEAutoAjustarConfig_50()
 -Se cair mais que MAX_DROP, faz rollback da Config e marca modo na última linha do histórico
 -Chama gerarJogosAgressivo() e dá flush()
-- Frequência total  
-- PLê o último concurso e dezenas na aba Resultados (A=concurso, C..Q=15 dezenas) 
+
+- Lê o último concurso e dezenas na aba Resultados (A=concurso, C..Q=15 dezenas) 
+- Chama registrarResultadoECalcularAcertosAuto()
 - Lê baseline em Config_Historico (média de N linhas da coluna best_score_media_hits ou alternativas)
 - Faz snapshot da aba Config (pares chave/valor)
+- Chama backtestFielEAutoAjustarConfig_50()
+- Se cair mais que MAX_DROP, faz rollback da Config e marca modo na última linha do histórico.
 - Chama gerarJogosAgressivo() e dá flush()
 
 ### Características

@@ -12,8 +12,9 @@ apps-script/
 │
 ├── update-lotofacil.gs           → Busca concursos na API da Caixa e mantém a aba Resultados
 ├── build-resumo.gs               → Gera automaticamente a aba Resumo com estatísticas
-├── coocorrenciatendecia.gs       → Calcula coocorrência e tendência das dezenas
+├── CoocorrenciaTendencias.gs     → Calcula coocorrência e tendência das dezenas
 ├── generate-analyses.gs          → (Opcional) Tendências e coocorrência (versão antiga / modular)
+├── Prod_Auto.gs                  → Gera jogos e faz chamadas em outros scripts (script Principl)
 └── README.md                     → Documentação desta pasta
 ```
 

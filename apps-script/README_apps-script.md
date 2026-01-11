@@ -48,9 +48,9 @@ Script responsável por sincronizar a aba **Resultados** com os concursos oficia
 
  **executarModoProducao()**
 
--Lê o último concurso e dezenas na aba Resultados (A=concurso, C..Q=15 dezenas)
--Lê baseline em Config_Historico (média de N linhas da coluna best_score_media_hits ou alternativas)
--Faz snapshot da aba Config (pares chave/valor)
+-Lê o último concurso e dezenas na aba **Resultados** (A=concurso, C..Q=15 dezenas)
+-Lê baseline em **Config_Historico** (média de N linhas da coluna best_score_media_hits ou alternativas)
+-Faz snapshot da aba **Config** (pares chave/valor)
 -Chama backtestFielEAutoAjustarConfig_50()
 -Se cair mais que MAX_DROP, faz rollback da Config e marca modo na última linha do histórico
 -Chama gerarJogosAgressivo() e dá flush()
@@ -58,10 +58,10 @@ Script responsável por sincronizar a aba **Resultados** com os concursos oficia
 - Lê o último concurso e dezenas na aba Resultados (A=concurso, C..Q=15 dezenas) 
 - Chama registrarResultadoECalcularAcertosAuto()
 - Lê baseline em Config_Historico (média de N linhas da coluna best_score_media_hits ou alternativas)
-- Faz snapshot da aba Config (pares chave/valor)
+- Faz snapshot da aba **Config** (pares chave/valor)
 - Chama backtestFielEAutoAjustarConfig_50()
 - Se cair mais que MAX_DROP, faz rollback da Config e marca modo na última linha do histórico.
-- Chama gerarJogosAgressivo() em **config.gs** e dá flush()
+- Chama **gerarJogosAgressivo()** em **config.gs** e dá flush()
 
 ---
 

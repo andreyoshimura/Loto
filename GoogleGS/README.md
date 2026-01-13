@@ -22,7 +22,7 @@ apps-script/
 
 ## 🟦 1-update-lotofacil.gs
 
-Script responsável por sincronizar a aba **Resultados** com os concursos oficiais da Lotofácil.
+Script **ETAPA 1 (Acionador 23:00hrs)** responsável por sincronizar a aba **Resultados** com os concursos oficiais da Lotofácil.
 
 ### Funções incluídas
 - **updateLotofacil()**  

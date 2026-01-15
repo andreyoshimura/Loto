@@ -73,13 +73,13 @@ function registrarResultadoECalcularAcertos(concurso, dezenasSorteadasStr) {
       "data_resultado", "concurso", "dezenas_sorteadas", "jogo_id", "dezenas_jogo", "acertos"
     ]]);
   }
-
-  // Evita duplicidade por concurso
-  if (concursoJaRegistrado_(shRJ, concurso)) {
-    return; // comportamento silencioso
-    // ou, se preferir falhar explicitamente:
-    // throw new Error(`Concurso ${concurso} já registrado em "Resultados_Jogos".`);
-  }
+ // Evita duplicidade por concurso (com log)
+if (concursoJaRegistrado_(shRJ, concurso)) {
+  console.log(
+    `[RJ] Concurso ${concurso} já existe em Resultados_Jogos. Nenhuma nova gravação necessária.`
+  );
+  return;
+}
 
   // Sorteio: 15 dezenas distintas
   const dezenasSorteadas = parseDezenasRobusto_(dezenasSorteadasStr);

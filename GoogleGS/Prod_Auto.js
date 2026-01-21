@@ -1,6 +1,6 @@
 /**
  * ============================================================
- * Prod_Auto.gs — MODO PRODUÇÃO AUTOMÁTICO (CORRIGIDO)
+ * Prod_Auto.gs — MODO PRODUÇÃO AUTOMÁTICO (GATILHO 3)
  * ============================================================
  *
  * Correções aplicadas:
@@ -96,7 +96,7 @@ function executarModoProducaoCore_() {
   }
 
   // --------------------------------------------------------
-  // 6) Gerar novos jogos (produção)
+  // 6) Gerar novos jogos (produção) ABA Jogos Gerados
   // --------------------------------------------------------
   if (typeof globalThis[GENERATOR_FN] !== "function") {
     throw new Error(`Gerador "${GENERATOR_FN}" não encontrado.`);

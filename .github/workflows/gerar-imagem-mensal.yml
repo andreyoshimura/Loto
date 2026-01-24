@@ -1,0 +1,39 @@
+name: Gerar imagem mensal (campanha)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "2 2 * * *"  # 1 minuto depois do seu atual (que é 1 2 * * *)
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sortefacil-imagem
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Instalar Pillow
+        run: pip install pillow
+
+      - name: Gerar imagem (campanha do mês)
+        run: python main.py
+
+      - name: Salvar no Git
+        run: |
+          git config --global user.name "Sorte Facil Bot"
+          git config --global user.email "sortefacil.br@gmail.com"
+          git add lotofacil.jpg fundo.png
+          git commit -m "Update imagem (campanha do mês)" || echo "Sem mudanças"
+          git push

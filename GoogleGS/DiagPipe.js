@@ -1,3 +1,5 @@
+//Nenhum gatilho aponta para ele
+//Só roda se alguém executar manualmente
 function diagPipeline() {
   const ss = SpreadsheetApp.getActive();
   Logger.log("Spreadsheet name: " + ss.getName());

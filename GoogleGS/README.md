@@ -186,4 +186,23 @@ Esta pasta mantém todos os scripts essenciais para rodar:
 - Estatísticas completas por dezena  
 - Coocorrência e tendências atualizadas  
 - Análises estruturadas para IA e automações externas  
-- Manutenção simples através de versionamento GitHub  
+- Manutenção simples através de versionamento GitHub
+
+- ORDEM da PIPE analisada 24/01
+- (updateLotofacil)
+        ↓
+(Resultados atualizados)
+        ↓
+(registrarResultadoECalcularAcertosAuto)
+        ↓
+(Resultados_Jogos)
+        ↓
+(executarModoProducao)
+        ↓
+(Config ajustado + Jogos_Gerados)
+        ↓
+(atualizarAnaliseLoto)   ← paralelo / não integrado
+        ↓
+(lotofacilEnviarAcertosPorEmail)
+
+

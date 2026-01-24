@@ -28,7 +28,7 @@ jobs:
         run: pip install pillow
 
       - name: Gerar imagem (campanha do mês)
-        run: python main.py
+        run: python gerar_imagem.py
 
       - name: Salvar no Git
         run: |

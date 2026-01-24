@@ -12,29 +12,31 @@ O objetivo é manter uma imagem sempre atualizada, com:
 
 ## 📁 Estrutura do Repositório
 
-
-├── main.py # Script principal do projeto (outras funções)
-├── gerar_imagem.py # Script EXCLUSIVO para geração de imagens
-├── fundo.png # Fundo ATIVO (sobrescrito automaticamente)
-├── lotofacil.jpg # Imagem final gerada diariamente
-├── fundos/ # Fundos mensais por campanha
-│ ├── janeiro_branco.png
-│ ├── fevereiro_roxo.png
-│ ├── marco_azul_marinho.png
-│ ├── abril_verde.png
-│ ├── maio_amarelo.png
-│ ├── junho_vermelho.png
-│ ├── julho_amarelo.png
-│ ├── agosto_dourado.png
-│ ├── setembro_amarelo.png
-│ ├── outubro_rosa.png
-│ ├── novembro_azul.png
-│ ├── dezembro_vermelho.png
-│ └── padrao.png
+```text
+.
+├── main.py                      # Script principal do projeto (outras funções)
+├── gerar_imagem.py              # Script EXCLUSIVO para geração de imagens
+├── fundo.png                    # Fundo ATIVO (sobrescrito automaticamente)
+├── lotofacil.jpg                # Imagem final gerada diariamente
+├── fundos/                      # Fundos mensais por campanha
+│   ├── janeiro_branco.png
+│   ├── fevereiro_roxo.png
+│   ├── marco_azul_marinho.png
+│   ├── abril_verde.png
+│   ├── maio_amarelo.png
+│   ├── junho_vermelho.png
+│   ├── julho_amarelo.png
+│   ├── agosto_dourado.png
+│   ├── setembro_amarelo.png
+│   ├── outubro_rosa.png
+│   ├── novembro_azul.png
+│   ├── dezembro_vermelho.png
+│   └── padrao.png
 └── .github/
-└── workflows/
-├── Automacao Sorte Facil.yml
-└── gerar-imagem-mensal.yml
+    └── workflows/
+        ├── Automacao Sorte Facil.yml
+        └── gerar-imagem-mensal.yml
+
 
 🛡️ Arquivo padrao.png
 

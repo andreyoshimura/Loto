@@ -9,7 +9,6 @@ O objetivo é manter uma imagem sempre atualizada, com:
 - Zero intervenção manual ao longo do ano
 
 ---
-
 ## 📁 Estrutura do Repositório
 
 ```text
@@ -28,14 +27,7 @@ O objetivo é manter uma imagem sempre atualizada, com:
 │   ├── julho_amarelo.png
 │   ├── agosto_dourado.png
 │   ├── setembro_amarelo.png
-│   ├── outubro_rosa.png
-│   ├── novembro_azul.png
-│   ├── dezembro_vermelho.png
-│   └── padrao.png
-└── .github/
-    └── workflows/
-        ├── Automacao Sorte Facil.yml
-        └── gerar-imagem-mensal.yml
+│   ├── ou
 
 
 🛡️ Arquivo padrao.png

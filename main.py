@@ -38,8 +38,8 @@ def gerar_imagem():
 
     # 5. Escrever na Imagem
     # Posicionado no centro do espaço verde
-    draw.text((540, 700), texto_topo, fill="blue", font=font_titulo, anchor="ms")
-    draw.text((540, 820), texto_sub, fill="white", font=font_titulo, anchor="ms")
+    draw.text((540, 700), texto_topo, fill="black", font=font_titulo, anchor="ms")
+    draw.text((540, 820), texto_sub, fill="gray", font=font_titulo, anchor="ms")
 
     # 6. Guardar o resultado final
     img.save("lotofacil.jpg", "JPEG", quality=95)

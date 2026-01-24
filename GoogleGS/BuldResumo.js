@@ -1,4 +1,5 @@
 /**
+ * Nenhum gatilho direto Se atualizarAnaliseLoto gera Resumo, então este é redundante ✔ Provavelmente abandonado
  * buildResumo()
  *
  * O que este script realmente faz:

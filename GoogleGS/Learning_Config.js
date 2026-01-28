@@ -3,111 +3,125 @@
  * Learning_config.gs (ETAPA 5) - BACKTEST FIEL AO GERADOR REAL
  * ============================================================
  *
- * Objetivo
- * --------
- * Encontrar o melhor conjunto de pesos (w20,w50,w100,wAtraso,wBayes,alphaScore)
- * por BACKTEST, gerando jogos com as MESMAS REGRAS do gerador de produção:
- *  - jogos de 17 dezenas (JOGO_DEZENAS)
- *  - QTDE_JOGOS jogos por concurso
- *  - proíbe sequência > MAX_SEQ (ex.: MAX_SEQ=4 => proíbe 5+ consecutivas)
- *  - diversidade entre jogos >= MIN_DIFF (diferença simétrica)
- *  - penaliza pares fracos (BOTTOM_PARES + PENALTY_WEAK_PAIR)
+ * Correções nesta versão:
+ * - Usa SpreadsheetApp.openById(SPREADSHEET_ID) (gatilho estável)
+ * - P é mutável (WINDOW_CONCURSOS pode ser reduzida)
+ * - Logs de diagnóstico por etapa
+ * - Corrige criação de aba de histórico (bug: criava Config_Historico errado)
+ * - Erros mais explícitos (timeout / dados insuficientes / restrições impossíveis)
  *
- * Dados de entrada
- * ---------------
- * Aba "Resultados":
- *  - Col A: concurso
- *  - Col C..Q: 15 dezenas sorteadas
- *
- * Aba "Config":
- *  - key/value (A/B) com os parâmetros usados.
- *
- * Saída
- * -----
- * - Atualiza "Config" com os melhores pesos encontrados
- * - Append em "Config_Historico" com modo "BACKTEST_FIEL_50"
- *
- * Performance / Limites
- * ---------------------
- * Backtest é pesado. Este script:
- *  - Pré-computa estatísticas por concurso uma vez (independente do candidato)
- *  - Pré-calcula pares fracos uma vez (coocorrência global do histórico)
- *  - Limita candidatos e simulações por concurso para não estourar tempo
+ * Pré-requisito:
+ * - Deve existir UM SPREADSHEET_ID global no projeto (não redeclare aqui).
  */
 
-
-/* =========================
-   FUNÇÃO PRINCIPAL
-   ========================= */
-
 function backtestFielEAutoAjustarConfig_50() {
-  const ss = SpreadsheetApp.getActive();
-  const shRes = mustSheet_(ss, "Resultados");
-  const cfg0 = loadConfigEnsureFull_(ss);
+  // -------- CONFIG / LIMITES --------
+  const MAX_RUNTIME_MS = 240000; // 4 min (ajuste conforme sua conta)
+  const t0 = Date.now();
 
-  // Ajuste fino aqui se quiser
+  // P precisa ser mutável porque podemos reduzir WINDOW_CONCURSOS
   const P = {
-    WINDOW_CONCURSOS: 50,     // <-- escolhido
-    MAX_CANDIDATES: 14,       // candidatos por execução
-    MAX_RUNTIME_MS: 240000,   // ~4 min
-    N_SIM_PER_JOGO: 90        // tentativas por jogo (filtrando regras)
+    WINDOW_CONCURSOS: 50,
+    MAX_CANDIDATES: 14,
+    N_SIM_PER_JOGO: 90
   };
 
-  // 1) Carrega histórico completo (para estatísticas e pares)
-  const fullHist = loadHistoricoResultados_(shRes); // [{concurso, dezenas[15]}...]
-  if (fullHist.length < P.WINDOW_CONCURSOS + 30) {
-    // não bloqueia; só reduz janela se for pouco
-    P.WINDOW_CONCURSOS = Math.min(P.WINDOW_CONCURSOS, fullHist.length);
+  // -------- ABERTURA DA PLANILHA (gatilho seguro) --------
+  if (typeof SPREADSHEET_ID === "undefined" || !SPREADSHEET_ID) {
+    throw new Error('CONFIG: SPREADSHEET_ID não definido no escopo global.');
   }
 
-  // 2) Define janela de avaliação (últimos N concursos)
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  logLC_(ss, "START", `Início backtest fiel. MAX_RUNTIME_MS=${MAX_RUNTIME_MS}`);
+
+  // -------- ENTRADAS --------
+  const shRes = mustSheetLC_(ss, "Resultados");
+  const cfg0 = loadConfigEnsureFullLC_(ss);
+
+  // 1) Carrega histórico completo
+  const fullHist = loadHistoricoResultadosLC_(shRes);
+  if (fullHist.length < 20) {
+    throw new Error(`DADOS: "Resultados" tem poucos concursos válidos (${fullHist.length}).`);
+  }
+
+  // Ajuste da janela conforme dados disponíveis
+  if (fullHist.length < P.WINDOW_CONCURSOS + 30) {
+    const old = P.WINDOW_CONCURSOS;
+    P.WINDOW_CONCURSOS = Math.max(10, Math.min(P.WINDOW_CONCURSOS, fullHist.length - 1));
+    logLC_(ss, "DATA", `Janela reduzida: ${old} -> ${P.WINDOW_CONCURSOS} (hist=${fullHist.length})`);
+  }
+
+  if (P.WINDOW_CONCURSOS < 10) {
+    throw new Error(`DADOS: janela de avaliação muito pequena (${P.WINDOW_CONCURSOS}).`);
+  }
+
+  // 2) Define janela de avaliação
   const evalHist = fullHist.slice(-P.WINDOW_CONCURSOS);
 
-  // 3) Pré-computa estatísticas por concurso (rolling windows + atraso + freq_total + N)
-  //    Isso é independente do candidato => ganho enorme de performance.
-  const statsByEvalIndex = precomputeStatsForEvalWindow_(fullHist, P.WINDOW_CONCURSOS);
+  // 3) Pré-computa stats por concurso (independente do candidato)
+  logLC_(ss, "STEP1", `Pré-computando stats (window=${P.WINDOW_CONCURSOS})...`);
+  const statsByEvalIndex = precomputeStatsForEvalWindowLC_(fullHist, P.WINDOW_CONCURSOS);
+  if (!statsByEvalIndex || statsByEvalIndex.length !== evalHist.length) {
+    throw new Error(`STATS: statsByEvalIndex inválido. stats=${statsByEvalIndex?.length} eval=${evalHist.length}`);
+  }
 
-  // 4) Pré-computa pares fracos (coocorrência global do histórico)
-  const weakPairs = computeWeakPairsGlobal_(fullHist, cfg0.BOTTOM_PARES);
+  // 4) Pré-computa pares fracos (coocorrência global)
+  logLC_(ss, "STEP2", `Computando pares fracos globais (BOTTOM_PARES=${cfg0.BOTTOM_PARES})...`);
+  const weakPairs = computeWeakPairsGlobalLC_(fullHist, cfg0.BOTTOM_PARES);
 
-  // 5) Gera candidatos ao redor do cfg atual
-  const candidates = generateCandidatesAroundCfg_(cfg0, P.MAX_CANDIDATES);
+  // 5) Candidatos
+  logLC_(ss, "STEP3", `Gerando candidatos (max=${P.MAX_CANDIDATES})...`);
+  const candidates = generateCandidatesAroundCfgLC_(cfg0, P.MAX_CANDIDATES);
+  if (!candidates.length) throw new Error("CAND: nenhum candidato gerado.");
 
-  // 6) Avalia cada candidato (backtest fiel)
-  const t0 = Date.now();
-  let best = { cfg: pickWeights_(cfg0), score: -Infinity };
+  // 6) Avaliação
+  logLC_(ss, "STEP4", `Avaliando candidatos... N_SIM_PER_JOGO=${P.N_SIM_PER_JOGO}`);
+  let best = { cfg: pickWeightsLC_(cfg0), score: -Infinity };
   let tested = 0;
+  let abortedByTimeout = false;
 
   for (let i = 0; i < candidates.length; i++) {
-    if (Date.now() - t0 > P.MAX_RUNTIME_MS) break;
+    if (Date.now() - t0 > MAX_RUNTIME_MS) {
+      abortedByTimeout = true;
+      break;
+    }
+
     const cand = candidates[i];
 
-    const score = evaluateCandidateBacktestFiel_(
+    const score = evaluateCandidateBacktestFielLC_(
       cand,
       evalHist,
       statsByEvalIndex,
       weakPairs,
-      cfg0,                // para pegar MAX_SEQ/MIN_DIFF/PENALTY_WEAK_PAIR/QTDE_JOGOS/JOGO_DEZENAS
+      cfg0,
       P.N_SIM_PER_JOGO,
       t0,
-      P.MAX_RUNTIME_MS
+      MAX_RUNTIME_MS
     );
 
     tested++;
 
-    if (score > best.score) best = { cfg: cand, score };
+    if (Number.isFinite(score) && score > best.score) {
+      best = { cfg: cand, score };
+    }
   }
 
-  if (!Number.isFinite(best.score) || best.score < 0) {
-    throw new Error("Backtest fiel falhou (timeout ou dados insuficientes).");
+  if (!Number.isFinite(best.score) || best.score === -Infinity) {
+    const why = abortedByTimeout ? "TIMEOUT" : "DADOS/REGRAS";
+    throw new Error(`BACKTEST: falhou. motivo=${why} tested=${tested} window=${P.WINDOW_CONCURSOS}`);
   }
 
   // 7) Aplica melhor cfg
-  const changed = hasWeightChange_(pickWeights_(cfg0), best.cfg);
-  if (changed) applyConfigUpdate_(ss, best.cfg);
+  const changed = hasWeightChangeLC_(pickWeightsLC_(cfg0), best.cfg);
+  if (changed) {
+    logLC_(ss, "APPLY", `Aplicando melhor cfg. score=${best.score}`);
+    applyConfigUpdateLC_(ss, best.cfg);
+  } else {
+    logLC_(ss, "APPLY", `Melhor cfg igual à atual. score=${best.score}`);
+  }
 
   // 8) Auditoria
-  appendConfigHistoricoBacktestFiel_(
+  appendConfigHistoricoBacktestFielLC_(
     ss,
     cfg0,
     best.cfg,
@@ -119,6 +133,7 @@ function backtestFielEAutoAjustarConfig_50() {
   );
 
   SpreadsheetApp.flush();
+  logLC_(ss, "END", `OK. score=${best.score} tested=${tested} duracao_ms=${Date.now() - t0}`);
 }
 
 
@@ -126,14 +141,7 @@ function backtestFielEAutoAjustarConfig_50() {
    BACKTEST FIEL (métrica = média de acertos)
    ========================= */
 
-/**
- * Para cada concurso na janela:
- *  - monta distribuição de pesos por dezena usando stats pré-computadas + candidato
- *  - gera QTDE_JOGOS com as regras (seq/diversidade/pares fracos)
- *  - calcula acertos vs sorteio real
- * Score = média das médias de acertos (por concurso)
- */
-function evaluateCandidateBacktestFiel_(
+function evaluateCandidateBacktestFielLC_(
   candWeights,
   evalHist,
   statsByEvalIndex,
@@ -153,13 +161,12 @@ function evaluateCandidateBacktestFiel_(
     if (Date.now() - t0 > maxMs) break;
 
     const sorteioSet = new Set(evalHist[i].dezenas);
-    const stats = statsByEvalIndex[i]; // stats para este concurso (baseado no passado)
+    const stats = statsByEvalIndex[i];
+    if (!stats) break;
 
-    // monta pesos por dezena (1..25)
-    const p = buildPFromStats_(stats, candWeights);
+    const p = buildPFromStatsLC_(stats, candWeights);
 
-    // gera os jogos (fiel: regras)
-    const jogos = generateJogosFieis_(
+    const jogos = generateJogosFieisLC_(
       p,
       QTDE_JOGOS,
       JOGO_DEZENAS,
@@ -170,8 +177,11 @@ function evaluateCandidateBacktestFiel_(
       N_SIM_PER_JOGO
     );
 
-    // se por algum motivo não conseguiu gerar (muito restrito), quebra
-    if (jogos.length !== QTDE_JOGOS) break;
+    // Falhou em gerar jogos para este concurso => sinal de regras restritas demais
+    if (jogos.length !== QTDE_JOGOS) {
+      // não retorna -Infinity direto; devolve score parcial (mais estável)
+      break;
+    }
 
     const hits = jogos.map(j => j.reduce((c, d) => c + (sorteioSet.has(d) ? 1 : 0), 0));
     const mediaConcurso = hits.reduce((a, b) => a + b, 0) / hits.length;
@@ -188,14 +198,7 @@ function evaluateCandidateBacktestFiel_(
    GERADOR FIEL (regras)
    ========================= */
 
-/**
- * Gera QTDE_JOGOS jogos de tamanho K:
- * - Monte Carlo: tenta N_SIM_PER_JOGO candidatos por jogo
- * - filtra: MAX_SEQ (sequência máxima)
- * - filtra: diversidade MIN_DIFF vs jogos já aceitos
- * - escolhe melhor candidato por score (peso das dezenas - penalidade de pares fracos)
- */
-function generateJogosFieis_(
+function generateJogosFieisLC_(
   pList,
   QTDE_JOGOS,
   K,
@@ -212,31 +215,29 @@ function generateJogosFieis_(
     let bestScore = -Infinity;
 
     for (let s = 0; s < N_SIM_PER_JOGO; s++) {
-      const cand = sampleOneDrawWeightedNoReplacement_(pList, K);
+      const cand = sampleOneDrawWeightedNoReplacementLC_(pList, K);
 
-      if (!okMaxSeq_(cand, MAX_SEQ)) continue;
-      if (!okDiversity_(cand, jogos, MIN_DIFF)) continue;
+      if (!okMaxSeqLC_(cand, MAX_SEQ)) continue;
+      if (!okDiversityLC_(cand, jogos, MIN_DIFF)) continue;
 
-      const sc = scoreJogo_(cand, pList, weakPairsSet, PENALTY_WEAK_PAIR);
+      const sc = scoreJogoLC_(cand, pList, weakPairsSet, PENALTY_WEAK_PAIR);
       if (sc > bestScore) {
         bestScore = sc;
         best = cand;
       }
     }
 
-    if (!best) return []; // falhou para este jogo
+    if (!best) return [];
     jogos.push(best);
   }
 
   return jogos;
 }
 
-function scoreJogo_(jogo, pList, weakPairsSet, penaltyWeakPair) {
-  // soma pesos individuais
+function scoreJogoLC_(jogo, pList, weakPairsSet, penaltyWeakPair) {
   let sc = 0;
   for (const d of jogo) sc += pList[d - 1];
 
-  // penaliza pares fracos
   for (let i = 0; i < jogo.length; i++) {
     for (let j = i + 1; j < jogo.length; j++) {
       const a = jogo[i], b = jogo[j];
@@ -244,11 +245,10 @@ function scoreJogo_(jogo, pList, weakPairsSet, penaltyWeakPair) {
       if (weakPairsSet.has(key)) sc -= penaltyWeakPair;
     }
   }
-
   return sc;
 }
 
-function okMaxSeq_(numsSortedAsc, maxSeq) {
+function okMaxSeqLC_(numsSortedAsc, maxSeq) {
   let run = 1;
   for (let i = 1; i < numsSortedAsc.length; i++) {
     if (numsSortedAsc[i] === numsSortedAsc[i - 1] + 1) {
@@ -261,7 +261,7 @@ function okMaxSeq_(numsSortedAsc, maxSeq) {
   return true;
 }
 
-function okDiversity_(cand, jogos, minDiff) {
+function okDiversityLC_(cand, jogos, minDiff) {
   if (jogos.length === 0) return true;
   const setC = new Set(cand);
   for (const j of jogos) {
@@ -276,24 +276,14 @@ function okDiversity_(cand, jogos, minDiff) {
 
 
 /* =========================
-   Estatísticas pré-computadas (janelas + atraso + Bayes)
+   Estatísticas pré-computadas
    ========================= */
 
-/**
- * Pré-computa stats para cada concurso da janela de avaliação.
- * statsByEvalIndex[i] é um array [26] (1..25) com:
- *  { f20,f50,f100, atraso, freqTotal, N }
- *
- * Importante: stats para o concurso X são calculadas usando somente concursos anteriores a X.
- */
-function precomputeStatsForEvalWindow_(fullHist, windowConc) {
+function precomputeStatsForEvalWindowLC_(fullHist, windowConc) {
   const N = fullHist.length;
   const startEval = Math.max(0, N - windowConc);
 
-  // rolling windows: armazenar últimas listas de dezenas para atualizar contagens
-  const q20 = [];
-  const q50 = [];
-  const q100 = [];
+  const q20 = [], q50 = [], q100 = [];
   const c20 = Array(26).fill(0);
   const c50 = Array(26).fill(0);
   const c100 = Array(26).fill(0);
@@ -306,8 +296,7 @@ function precomputeStatsForEvalWindow_(fullHist, windowConc) {
   for (let idx = 0; idx < N; idx++) {
     const dezenas = fullHist[idx].dezenas;
 
-    // Antes de "consumir" o idx, se ele está na janela de avaliação,
-    // snapshot das stats acumuladas (baseadas no passado)
+    // snapshot (somente passado)
     if (idx >= startEval) {
       const snap = Array(26);
       for (let d = 1; d <= 25; d++) {
@@ -318,13 +307,13 @@ function precomputeStatsForEvalWindow_(fullHist, windowConc) {
           f100: c100[d],
           atraso: atraso,
           freqTotal: freqTotal[d],
-          N: idx // número de concursos "passados" usados (0..idx-1); aqui idx é quantidade antes de consumir idx
+          N: idx // quantidade de concursos anteriores
         };
       }
       statsByEvalIndex.push(snap);
     }
 
-    // Agora consome o concurso idx (atualiza contagens para próximos)
+    // consome idx
     dezenas.forEach(d => {
       freqTotal[d]++;
       lastSeenIndex[d] = idx;
@@ -332,33 +321,19 @@ function precomputeStatsForEvalWindow_(fullHist, windowConc) {
     });
 
     q20.push(dezenas);
-    if (q20.length > 20) {
-      const old = q20.shift();
-      old.forEach(d => c20[d]--);
-    }
+    if (q20.length > 20) q20.shift().forEach(d => c20[d]--);
 
     q50.push(dezenas);
-    if (q50.length > 50) {
-      const old = q50.shift();
-      old.forEach(d => c50[d]--);
-    }
+    if (q50.length > 50) q50.shift().forEach(d => c50[d]--);
 
     q100.push(dezenas);
-    if (q100.length > 100) {
-      const old = q100.shift();
-      old.forEach(d => c100[d]--);
-    }
+    if (q100.length > 100) q100.shift().forEach(d => c100[d]--);
   }
 
-  return statsByEvalIndex; // tamanho = windowConc
+  return statsByEvalIndex;
 }
 
-/**
- * Constrói pList (25) a partir de stats (por dezena) e pesos do candidato.
- * p = alpha*(w20*f20 + w50*f50 + w100*f100 - wAtraso*atraso) + wBayes*pBayes
- * pBayes = (freqTotal+1)/(N+2)
- */
-function buildPFromStats_(statsSnap, cand) {
+function buildPFromStatsLC_(statsSnap, cand) {
   const raw = Array(25).fill(0);
 
   for (let d = 1; d <= 25; d++) {
@@ -372,25 +347,18 @@ function buildPFromStats_(statsSnap, cand) {
       (cand.wAtraso * st.atraso);
 
     const score = (cand.alphaScore * core) + (cand.wBayes * pBayes);
-
-    // garante positivo mínimo
     raw[d - 1] = Number.isFinite(score) ? Math.max(score, 1e-9) : 1e-9;
   }
 
-  return normalizePositive_(raw);
+  return normalizePositiveLC_(raw);
 }
 
 
 /* =========================
-   Pares fracos (coocorrência global)
+   Pares fracos (global)
    ========================= */
 
-/**
- * Computa coocorrência global no histórico e retorna Set dos BOTTOM_PARES mais fracos.
- * “Mais fraco” = menor contagem de coocorrências.
- */
-function computeWeakPairsGlobal_(hist, bottomPairs) {
-  // matriz triangular em map "a-b" -> count
+function computeWeakPairsGlobalLC_(hist, bottomPairs) {
   const counts = new Map();
 
   for (const h of hist) {
@@ -404,18 +372,16 @@ function computeWeakPairsGlobal_(hist, bottomPairs) {
     }
   }
 
-  // ordena por contagem crescente e pega bottomPairs
   const arr = Array.from(counts.entries()).sort((x, y) => x[1] - y[1]);
-  const weak = new Set(arr.slice(0, Math.max(0, bottomPairs)).map(x => x[0]));
-  return weak;
+  return new Set(arr.slice(0, Math.max(0, bottomPairs)).map(x => x[0]));
 }
 
 
 /* =========================
-   Monte Carlo ponderado (sem reposição)
+   Monte Carlo ponderado
    ========================= */
 
-function sampleOneDrawWeightedNoReplacement_(pList, K) {
+function sampleOneDrawWeightedNoReplacementLC_(pList, K) {
   const items = [];
   for (let i = 0; i < pList.length; i++) {
     const w = (pList[i] > 0) ? pList[i] : 1e-12;
@@ -429,7 +395,7 @@ function sampleOneDrawWeightedNoReplacement_(pList, K) {
   return chosen;
 }
 
-function normalizePositive_(arr) {
+function normalizePositiveLC_(arr) {
   const safe = arr.map(x => (Number.isFinite(x) ? Math.max(x, 1e-12) : 1e-12));
   const sum = safe.reduce((a, b) => a + b, 0);
   return safe.map(x => x / sum);
@@ -440,11 +406,11 @@ function normalizePositive_(arr) {
    Leitura do histórico "Resultados"
    ========================= */
 
-function loadHistoricoResultados_(shRes) {
+function loadHistoricoResultadosLC_(shRes) {
   const lr = shRes.getLastRow();
   if (lr < 2) return [];
 
-  const values = shRes.getRange(2, 1, lr - 1, 17).getValues(); // A..Q
+  const values = shRes.getRange(2, 1, lr - 1, 17).getValues();
   const out = [];
 
   values.forEach(r => {
@@ -463,10 +429,10 @@ function loadHistoricoResultados_(shRes) {
 
 
 /* =========================
-   Candidatos (vizinhança do cfg atual)
+   Candidatos
    ========================= */
 
-function pickWeights_(cfg) {
+function pickWeightsLC_(cfg) {
   return {
     w20: cfg.w20,
     w50: cfg.w50,
@@ -477,8 +443,8 @@ function pickWeights_(cfg) {
   };
 }
 
-function generateCandidatesAroundCfg_(cfg0, maxCandidates) {
-  const base = pickWeights_(cfg0);
+function generateCandidatesAroundCfgLC_(cfg0, maxCandidates) {
+  const base = pickWeightsLC_(cfg0);
 
   const LIMITS = {
     w20: [0, 10],
@@ -503,22 +469,22 @@ function generateCandidatesAroundCfg_(cfg0, maxCandidates) {
     const k1 = (Math.random() < 0.5)
       ? keysInt[Math.floor(Math.random() * keysInt.length)]
       : keysSmall[Math.floor(Math.random() * keysSmall.length)];
-    tweakKey_(cand, k1, LIMITS, STEP_INT, STEP_SMALL);
+    tweakKeyLC_(cand, k1, LIMITS, STEP_INT, STEP_SMALL);
 
     if (Math.random() < 0.35) {
       const k2 = (Math.random() < 0.5)
         ? keysInt[Math.floor(Math.random() * keysInt.length)]
         : keysSmall[Math.floor(Math.random() * keysSmall.length)];
-      tweakKey_(cand, k2, LIMITS, STEP_INT, STEP_SMALL);
+      tweakKeyLC_(cand, k2, LIMITS, STEP_INT, STEP_SMALL);
     }
 
-    if (!cands.some(x => sameWeights_(x, cand))) cands.push(cand);
+    if (!cands.some(x => sameWeightsLC_(x, cand))) cands.push(cand);
   }
 
   return cands;
 }
 
-function tweakKey_(cand, key, limits, stepInt, stepSmall) {
+function tweakKeyLC_(cand, key, limits, stepInt, stepSmall) {
   const [lo, hi] = limits[key];
   const step = (key === "w20" || key === "w50" || key === "w100") ? stepInt : stepSmall;
   const dir = (Math.random() < 0.5) ? -1 : 1;
@@ -529,12 +495,12 @@ function tweakKey_(cand, key, limits, stepInt, stepSmall) {
   cand[key] = Number(v);
 }
 
-function sameWeights_(a, b) {
+function sameWeightsLC_(a, b) {
   const keys = ["w20", "w50", "w100", "wAtraso", "wBayes", "alphaScore"];
   return keys.every(k => Number(a[k]) === Number(b[k]));
 }
 
-function hasWeightChange_(a, b) {
+function hasWeightChangeLC_(a, b) {
   const keys = ["w20", "w50", "w100", "wAtraso", "wBayes", "alphaScore"];
   return keys.some(k => Number(a[k]) !== Number(b[k]));
 }
@@ -544,10 +510,10 @@ function hasWeightChange_(a, b) {
    Config update + Auditoria
    ========================= */
 
-function applyConfigUpdate_(ss, newOpt) {
-  const sh = mustSheet_(ss, "Config");
+function applyConfigUpdateLC_(ss, newOpt) {
+  const sh = mustSheetLC_(ss, "Config");
   const lr = sh.getLastRow();
-  if (lr < 2) throw new Error('Aba "Config" vazia (sem linhas key/value).');
+  if (lr < 2) throw new Error('CONFIG: Aba "Config" vazia (sem linhas key/value).');
 
   const rows = sh.getRange(2, 1, lr - 1, 2).getValues();
   const idx = new Map();
@@ -569,11 +535,18 @@ function applyConfigUpdate_(ss, newOpt) {
   });
 }
 
-function appendConfigHistoricoBacktestFiel_(ss, oldCfg, newCfg, bestScore, windowConc, testedCands, changed, modo) {
+/**
+ * Histórico correto:
+ * - Se você quer usar "Config_Historico" (principal): escreva nela.
+ * - Se você quer separar backtests: use "Config_Historico_Backtest".
+ *
+ * Aqui eu vou manter como "Config_Historico_Backtest" (separado), como seu header sugere.
+ */
+function appendConfigHistoricoBacktestFielLC_(ss, oldCfg, newCfg, bestScore, windowConc, testedCands, changed, modo) {
   let sh = ss.getSheetByName("Config_Historico_Backtest");
   if (!sh) {
-    sh = ss.insertSheet("Config_Historico");
-    sh.getRange("A1:Q1").setValues([[
+    sh = ss.insertSheet("Config_Historico_Backtest"); // <-- CORRIGIDO
+    sh.getRange("A1:R1").setValues([[
       "timestamp",
       "mudou",
       "window_concursos",
@@ -583,9 +556,6 @@ function appendConfigHistoricoBacktestFiel_(ss, oldCfg, newCfg, bestScore, windo
       "w20_new","w50_new","w100_new","wAtraso_new","wBayes_new","alphaScore_new",
       "modo"
     ]]);
-  } else {
-    // garante pelo menos 17 colunas
-    if (sh.getLastColumn() < 17) sh.insertColumnsAfter(sh.getLastColumn(), 17 - sh.getLastColumn());
   }
 
   const row = [
@@ -607,19 +577,16 @@ function appendConfigHistoricoBacktestFiel_(ss, oldCfg, newCfg, bestScore, windo
    Utils / Config load
    ========================= */
 
-function mustSheet_(ss, name) {
+function mustSheetLC_(ss, name) {
   const sh = ss.getSheetByName(name);
-  if (!sh) throw new Error(`Aba "${name}" não encontrada.`);
+  if (!sh) throw new Error(`SHEET: Aba "${name}" não encontrada.`);
   return sh;
 }
 
-/**
- * Lê Config completo (inclui regras), aceitando vírgula decimal.
- */
-function loadConfigEnsureFull_(ss) {
-  const sh = mustSheet_(ss, "Config");
+function loadConfigEnsureFullLC_(ss) {
+  const sh = mustSheetLC_(ss, "Config");
   const lr = sh.getLastRow();
-  if (lr < 2) throw new Error('Aba "Config" sem linhas key/value.');
+  if (lr < 2) throw new Error('CONFIG: Aba "Config" sem linhas key/value.');
 
   const rows = sh.getRange(2, 1, lr - 1, 2).getValues();
   const cfgRaw = {};
@@ -648,4 +615,13 @@ function loadConfigEnsureFull_(ss) {
     BOTTOM_PARES: cfgRaw.BOTTOM_PARES ?? 60,
     PENALTY_WEAK_PAIR: cfgRaw.PENALTY_WEAK_PAIR ?? 5
   };
+}
+
+
+/* =========================
+   Logger simples (pode integrar com sua aba Logs)
+   ========================= */
+
+function logLC_(ss, tag, msg) {
+  console.log(`[LC][${tag}] ${msg}`);
 }

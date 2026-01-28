@@ -142,6 +142,28 @@ Base de simulações Monte Carlo -> apps-script/MonteCarloBayes.gs:
 | **`JOGO_DEZENAS`** | Quantidade de números por jogo (ex: 17 dezenas). |
 | **`alphaScore`** | Sensibilidade do ranking: equilibra peso histórico e tendências recentes. |
 
+🛠️ Integração: Aba Config vs. Scripts
+
+A comunicação entre a interface (Planilha) e o motor (Script) é feita pela função centralizadora de leitura de parâmetros.
+Função de Consumo: getConfigValue(key)
+
+Todos os scripts utilizam esta função para buscar os valores da aba Config.
+
+`/**
+ * Busca um valor de configuração na aba 'Config' baseado na chave fornecida.
+ * @param {string} key O nome da configuração (ex: "MIN_DIFF").
+ * @return {any} O valor associado à chave.
+ */
+function getConfigValue(key) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Config");
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === key) return data[i][1];
+  }
+  return null;
+}`
+
+
 🤖 Resumo dos Scripts e Fluxo
 
 O sistema funciona num pipeline de 4 etapas automáticas:

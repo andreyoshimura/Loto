@@ -132,7 +132,30 @@ Base de simulações Monte Carlo -> apps-script/MonteCarloBayes.gs:
 ---
 
 #### Config
-Parâmetros ativos da IA:
+### ⚙️ Parâmetros de Configuração (Aba Config)
+
+| Variável | Função |
+| :--- | :--- |
+| **`MIN_DIFF`** | Define a quantidade mínima de dezenas diferentes entre os jogos. Garante diversidade. |
+| **`MAX_SEQ`** | Limita números em sequência (ex: 01-02-03). Filtra padrões improváveis. |
+| **`N_SIM`** | Tentativas que o algoritmo faz para encontrar um jogo que passe nos filtros acima. |
+| **`JOGO_DEZENAS`** | Quantidade de números por jogo (ex: 17 dezenas). |
+| **`alphaScore`** | Sensibilidade do ranking: equilibra peso histórico e tendências recentes. |
+
+🤖 Resumo dos Scripts e Fluxo
+
+O sistema funciona num pipeline de 4 etapas automáticas:
+
+    STEP 1 & 2 (Importação): O script lê o último sorteio e atualiza a tabela de acertos dos jogos anteriores.
+
+    STEP 3 (Aprendizado): O motor de backtest testa milhares de combinações de pesos nos últimos 50 concursos para encontrar a melhor configuração atual. Nota: O código agora é resiliente e pula concursos impossíveis sem interromper o processo.
+
+    STEP 4 (Geração): Com os pesos calibrados e respeitando a MIN_DIFF e MAX_SEQ, o sistema gera os 5 melhores palpites para o próximo concurso.
+
+Dica Final: Se precisares de mudar a estratégia para jogos mais "espalhados", aumenta o MIN_DIFF para 12. Se quiseres jogos mais focados nas dezenas quentes, aumenta o alphaScore para 1.5.
+
+
+Parâmetros ativos old
 - pesos de frequência (20/50/100)
 - peso de atraso
 - peso bayesiano

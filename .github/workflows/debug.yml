@@ -1,0 +1,4 @@
+- name: Verificar fundos
+  run: |
+    ls -l fundos/
+    file fundos/fevereiro_roxo.png

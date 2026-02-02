@@ -1,4 +1,4 @@
-// imagem mensal
+# imagem mensal
 import datetime
 import shutil
 from PIL import Image, ImageDraw, ImageFont
@@ -6,16 +6,16 @@ from PIL import Image, ImageDraw, ImageFont
 CAMPANHAS = {
     1:  "fundos/janeiro_branco.png",        # Janeiro Branco
     2:  "fundos/fevereiro_roxo.png",        # (ex.: Lúpus/Alzheimer etc. se você usar)
-    3:  "fundos/marco_azul_marinho.png",    # (ex.campanha de combate ao câncer de intestino)
-    4:  "fundos/abril_verde.png",           # (ex.conscientização sobre segurança e saúde no trabalho)
-    5:  "fundos/maio_amarelo.png",          # (ex.segurança no trânsito)
-    6:  "fundos/junho_vermelho.png",        # (ex.doar sangue)
-    7:  "fundos/julho_amarelo.png",         # (ex.hepatites virais)
-    8:  "fundos/agosto_dourado.png",        # (ex.amamentação)
+    3:  "fundos/marco_azul_marinho.png",    # (ex. campanha de combate ao câncer de intestino)
+    4:  "fundos/abril_verde.png",           # (ex. conscientização sobre segurança e saúde no trabalho)
+    5:  "fundos/maio_amarelo.png",          # (ex. segurança no trânsito)
+    6:  "fundos/junho_vermelho.png",        # (ex. doar sangue)
+    7:  "fundos/julho_amarelo.png",         # (ex. hepatites virais)
+    8:  "fundos/agosto_dourado.png",        # (ex. amamentação)
     9:  "fundos/setembro_amarelo.png",      # Setembro Amarelo
     10: "fundos/outubro_rosa.png",          # Outubro Rosa
     11: "fundos/novembro_azul.png",         # Novembro Azul
-    12: "fundos/dezembro_vermelho.png", 
+    12: "fundos/dezembro_vermelho.png",     # Dezembro Vermelho
 }
 
 def atualizar_fundo():
@@ -35,8 +35,13 @@ def gerar_imagem():
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 65
     )
 
-    draw.text((540, 700), f"Dicas do dia {hoje}",
-              fill="black", font=font, anchor="ms")
+    draw.text(
+        (540, 700),
+        f"Dicas do dia {hoje}",
+        fill="black",
+        font=font,
+        anchor="ms",
+    )
 
     img.save("lotofacil.jpg", "JPEG", quality=95)
 

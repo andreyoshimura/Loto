@@ -1,4 +1,30 @@
-- name: Verificar fundos
-  run: |
-    ls -l fundos/
-    file fundos/fevereiro_roxo.png
+name: Debug fundos
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verificar fundos
+        run: |
+          ls -la
+          echo "----"
+          ls -la fundos || true
+          echo "----"
+          file fundos/fevereiro_roxo.png || true
+          echo "----"
+          python - <<'PY'
+          from PIL import Image
+          p = "fundos/fevereiro_roxo.png"
+          try:
+            im = Image.open(p)
+            im.verify()
+            print("OK: imagem válida:", p)
+          except Exception as e:
+            print("ERRO: imagem inválida:", p, e)
+          PY

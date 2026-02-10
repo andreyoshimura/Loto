@@ -16,7 +16,7 @@ def gerar_imagem():
     draw = ImageDraw.Draw(img)
     
     # 3. Textos
-    texto_topo = f"🍀 Dicas do dia {hoje} 🍀"
+    texto_topo = f"🍀 Tendencia {hoje} 🍀"
     texto_sub = "Lotofácil 👇"
     
     # Dicas Aleatórias (Podes trocar por uma lógica de análise real)

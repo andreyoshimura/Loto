@@ -27,7 +27,7 @@ def gerar_imagem():
     draw = ImageDraw.Draw(img)
     
     # 3. Textos (Mantendo apenas o que você pediu)
-    texto_topo = f" Sugestão do dia {hoje} "
+    texto_topo = f" Tendencia {hoje} "
     texto_sub = "  Lotofácil  "
     
     # 4. Configurar Fontes

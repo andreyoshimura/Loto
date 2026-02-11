@@ -37,7 +37,7 @@ def gerar_imagem():
 
     draw.text(
         (540, 700),
-        f"Dicas do dia {hoje}",
+        f"Tendência {hoje}",
         fill="white",
         font=font,
         anchor="ms",

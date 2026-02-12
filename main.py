@@ -28,7 +28,7 @@ def gerar_imagem():
     
     # 3. Textos (Mantendo apenas o que você pediu)
     texto_topo = f" Tendencia {hoje} "
-    texto_sub = "  Lotofácil  "
+    texto_sub = "  Lotof@cil  "
     
     # 4. Configurar Fontes
     try:

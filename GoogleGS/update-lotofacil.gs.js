@@ -1,4 +1,5 @@
-/**
+  /**
+ * GATILHO 1
  * Lista os resultados da lotofacil:
  * 1) Automação diária em "updateLotofacil"
  * 2) Lista todos os concursos existentes

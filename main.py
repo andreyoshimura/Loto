@@ -43,7 +43,7 @@ def gerar_imagem():
     draw.text(
         (largura / 2, altura * 0.65),
         texto_sub,
-        fill="white",
+        fill="black",
         font=font_titulo,
         anchor="ms"
     )

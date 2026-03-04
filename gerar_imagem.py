@@ -1,36 +1,34 @@
-# gerar_imagem.py
-
+from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import shutil
-import os
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+import pathlib
 
-# ==========================
-# CONFIGURAÇÃO
-# ==========================
+# ================================
+# CONFIGURAÇÕES
+# ================================
 
 LARGURA = 1080
-ALTURA = 1350  # padrão Instagram 4:5
+ALTURA = 1350
 
 CAMPANHAS = {
-    1:  "fundos/janeiro_branco.png",
-    2:  "fundos/fevereiro_roxo.png",
-    3:  "fundos/marco_azul_marinho.png",
-    4:  "fundos/abril_verde.png",
-    5:  "fundos/maio_amarelo.png",
-    6:  "fundos/junho_vermelho.png",
-    7:  "fundos/julho_amarelo.png",
-    8:  "fundos/agosto_dourado.png",
-    9:  "fundos/setembro_amarelo.png",
+    1: "fundos/janeiro_branco.png",
+    2: "fundos/fevereiro_roxo.png",
+    3: "fundos/marco_azul_marinho.png",
+    4: "fundos/abril_verde.png",
+    5: "fundos/maio_amarelo.png",
+    6: "fundos/junho_vermelho.png",
+    7: "fundos/julho_amarelo.png",
+    8: "fundos/agosto_dourado.png",
+    9: "fundos/setembro_amarelo.png",
     10: "fundos/outubro_rosa.png",
     11: "fundos/novembro_azul.png",
     12: "fundos/dezembro_vermelho.png",
 }
 
-# ==========================
-# FUNÇÃO TROCA FUNDO
-# ==========================
+# ================================
+# FUNÇÃO: Atualiza fundo do mês
+# ================================
 
 def atualizar_fundo():
     agora = datetime.now(ZoneInfo("America/Sao_Paulo"))
@@ -38,54 +36,66 @@ def atualizar_fundo():
 
     print(f"[DEBUG] Mês detectado (Brasil): {mes}")
 
-    origem = CAMPANHAS.get(mes, "fundos/padrao.png")
+    base_dir = pathlib.Path(__file__).parent.resolve()
 
-    if not os.path.exists(origem):
+    caminho_relativo = CAMPANHAS.get(mes, "fundos/padrao.png")
+    origem = base_dir / caminho_relativo
+
+    if not origem.exists():
         raise FileNotFoundError(f"Fundo não encontrado: {origem}")
 
-    shutil.copyfile(origem, "fundo.png")
+    destino = base_dir / "fundo.png"
+
+    shutil.copyfile(origem, destino)
+
     print(f"[DEBUG] Fundo atualizado para: {origem}")
 
-# ==========================
-# FUNÇÃO GERA IMAGEM
-# ==========================
+
+# ================================
+# FUNÇÃO: Gera imagem final
+# ================================
 
 def gerar_imagem():
     atualizar_fundo()
 
+    base_dir = pathlib.Path(__file__).parent.resolve()
+    fundo_path = base_dir / "fundo.png"
+
+    fundo = Image.open(fundo_path).convert("RGB")
+
+    # Padroniza tamanho Instagram 4:5
+    fundo = fundo.resize((LARGURA, ALTURA))
+
+    draw = ImageDraw.Draw(fundo)
+
     agora = datetime.now(ZoneInfo("America/Sao_Paulo"))
-    hoje = agora.strftime("%d/%m/%Y")
+    data_str = agora.strftime("%d/%m/%Y")
 
-    img = Image.open("fundo.png").convert("RGB")
+    texto = f"Tendência {data_str}"
 
-    # 🔥 força proporção Instagram
-    img = ImageOps.fit(img, (LARGURA, ALTURA), Image.LANCZOS)
+    try:
+        fonte = ImageFont.truetype("arial.ttf", 80)
+    except:
+        fonte = ImageFont.load_default()
 
-    draw = ImageDraw.Draw(img)
+    bbox = draw.textbbox((0, 0), texto, font=fonte)
+    largura_texto = bbox[2] - bbox[0]
+    altura_texto = bbox[3] - bbox[1]
 
-    font = ImageFont.truetype(
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        70
-    )
+    x = (LARGURA - largura_texto) / 2
+    y = ALTURA * 0.60
 
-    draw.text(
-        (LARGURA / 2, ALTURA * 0.60),
-        f"Tendência {hoje}",
-        fill="white",
-        font=font,
-        anchor="ms",
-    )
+    draw.text((x, y), texto, font=fonte, fill="white")
 
-    img.save(
-        "lotofacil.jpg",
-        "JPEG",
-        quality=85,
-        optimize=True
-    )
+    saida = base_dir / "lotofacil.jpg"
+    fundo.save(saida, quality=95)
 
-    print("[DEBUG] Imagem gerada 1080x1350 padrão Instagram")
+    print("[DEBUG] Imagem final gerada com sucesso")
 
-# ==========================
+
+# ================================
+# EXECUÇÃO
+# ================================
 
 if __name__ == "__main__":
     gerar_imagem()

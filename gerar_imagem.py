@@ -1,49 +1,68 @@
-# imagem mensal
-import datetime
+# gerar_imagem.py
+
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import shutil
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 CAMPANHAS = {
-    1:  "fundos/janeiro_branco.png",        # Janeiro Branco
-    2:  "fundos/fevereiro_roxo.png",        # (ex.: Lúpus/Alzheimer etc. se você usar)
-    3:  "fundos/marco_azul_marinho.png",    # (ex. campanha de combate ao câncer de intestino)
-    4:  "fundos/abril_verde.png",           # (ex. conscientização sobre segurança e saúde no trabalho)
-    5:  "fundos/maio_amarelo.png",          # (ex. segurança no trânsito)
-    6:  "fundos/junho_vermelho.png",        # (ex. doar sangue)
-    7:  "fundos/julho_amarelo.png",         # (ex. hepatites virais)
-    8:  "fundos/agosto_dourado.png",        # (ex. amamentação)
-    9:  "fundos/setembro_amarelo.png",      # Setembro Amarelo
-    10: "fundos/outubro_rosa.png",          # Outubro Rosa
-    11: "fundos/novembro_azul.png",         # Novembro Azul
-    12: "fundos/dezembro_vermelho.png",     # Dezembro Vermelho
+    1:  "fundos/janeiro_branco.png",
+    2:  "fundos/fevereiro_roxo.png",
+    3:  "fundos/marco_azul_marinho.png",
+    4:  "fundos/abril_verde.png",
+    5:  "fundos/maio_amarelo.png",
+    6:  "fundos/junho_vermelho.png",
+    7:  "fundos/julho_amarelo.png",
+    8:  "fundos/agosto_dourado.png",
+    9:  "fundos/setembro_amarelo.png",
+    10: "fundos/outubro_rosa.png",
+    11: "fundos/novembro_azul.png",
+    12: "fundos/dezembro_vermelho.png",
 }
 
+LARGURA = 1080
+ALTURA = 1350   # padrão Instagram 4:5
+
 def atualizar_fundo():
-    mes = datetime.datetime.now().month
+    agora = datetime.now(ZoneInfo("America/Sao_Paulo"))
+    mes = agora.month
     origem = CAMPANHAS.get(mes, "fundos/padrao.png")
     shutil.copyfile(origem, "fundo.png")
 
 def gerar_imagem():
     atualizar_fundo()
 
-    hoje = datetime.datetime.now().strftime("%d/%m/%Y")
+    agora = datetime.now(ZoneInfo("America/Sao_Paulo"))
+    hoje = agora.strftime("%d/%m/%Y")
 
     img = Image.open("fundo.png").convert("RGB")
+
+    # 🔥 força proporção 4:5
+    img = ImageOps.fit(img, (LARGURA, ALTURA), Image.LANCZOS)
+
     draw = ImageDraw.Draw(img)
 
     font = ImageFont.truetype(
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 65
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        70
     )
 
     draw.text(
-        (540, 700),
+        (LARGURA / 2, ALTURA * 0.60),
         f"Tendência {hoje}",
         fill="white",
         font=font,
         anchor="ms",
     )
 
-    img.save("lotofacil.jpg", "JPEG", quality=95)
+    img.save(
+        "lotofacil.jpg",
+        "JPEG",
+        quality=85,
+        optimize=True
+    )
+
+    print("Imagem gerada 1080x1350 (padrão Instagram)")
 
 if __name__ == "__main__":
     gerar_imagem()

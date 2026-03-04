@@ -3,7 +3,15 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import shutil
+import os
 from PIL import Image, ImageDraw, ImageFont, ImageOps
+
+# ==========================
+# CONFIGURAÇÃO
+# ==========================
+
+LARGURA = 1080
+ALTURA = 1350  # padrão Instagram 4:5
 
 CAMPANHAS = {
     1:  "fundos/janeiro_branco.png",
@@ -20,14 +28,27 @@ CAMPANHAS = {
     12: "fundos/dezembro_vermelho.png",
 }
 
-LARGURA = 1080
-ALTURA = 1350   # padrão Instagram 4:5
+# ==========================
+# FUNÇÃO TROCA FUNDO
+# ==========================
 
 def atualizar_fundo():
     agora = datetime.now(ZoneInfo("America/Sao_Paulo"))
     mes = agora.month
+
+    print(f"[DEBUG] Mês detectado (Brasil): {mes}")
+
     origem = CAMPANHAS.get(mes, "fundos/padrao.png")
+
+    if not os.path.exists(origem):
+        raise FileNotFoundError(f"Fundo não encontrado: {origem}")
+
     shutil.copyfile(origem, "fundo.png")
+    print(f"[DEBUG] Fundo atualizado para: {origem}")
+
+# ==========================
+# FUNÇÃO GERA IMAGEM
+# ==========================
 
 def gerar_imagem():
     atualizar_fundo()
@@ -37,7 +58,7 @@ def gerar_imagem():
 
     img = Image.open("fundo.png").convert("RGB")
 
-    # 🔥 força proporção 4:5
+    # 🔥 força proporção Instagram
     img = ImageOps.fit(img, (LARGURA, ALTURA), Image.LANCZOS)
 
     draw = ImageDraw.Draw(img)
@@ -62,7 +83,9 @@ def gerar_imagem():
         optimize=True
     )
 
-    print("Imagem gerada 1080x1350 (padrão Instagram)")
+    print("[DEBUG] Imagem gerada 1080x1350 padrão Instagram")
+
+# ==========================
 
 if __name__ == "__main__":
     gerar_imagem()
